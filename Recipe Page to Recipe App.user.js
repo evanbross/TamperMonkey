@@ -47,7 +47,7 @@
 (function () {
     'use strict';
 
-    const ENDPOINT = 'http://localhost:8000/capture/url';
+    const ENDPOINT = 'http://localhost:8001/capture/url';
     const POSITION_KEY = '__recipe_app_btn_position';
     const BTN_ID = '__recipe_app_btn';
 
