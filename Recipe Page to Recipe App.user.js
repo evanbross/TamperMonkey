@@ -3,10 +3,13 @@
 // @description  Install a button on any page that sends the current URL to the local Recipe App for capture.
 // @namespace    http://tampermonkey.net/
 // @version      2026-05-16
-// @match        *://*/*
+// @match        https://www.177milkstreet.com/recipes/*
+// @match        https://www.seriouseats.com/*
+// @match        https://thewoksoflife.com/*
+// @match        https://wurstcircle.com/sausage-making-recipes/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        GM_xmlhttpRequest
-// @connect      localhost
+// @connect      recipe-app.localhost
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -47,7 +50,7 @@
 (function () {
     'use strict';
 
-    const ENDPOINT = 'http://localhost:8001/capture/url';
+    const ENDPOINT = 'http://recipe-app.localhost/capture/url';
     const POSITION_KEY = '__recipe_app_btn_position';
     const BTN_ID = '__recipe_app_btn';
 
