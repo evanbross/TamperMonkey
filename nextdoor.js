@@ -65,7 +65,7 @@
     hidePostsContainingText(/\b(aspca|microchipped)\b/i)
     hidePostsContainingText(/\bforever homes*\b/i)
     hidePostsContainingText(/\b(dog|cat) (food|rescue)\b/i)
-    hidePostsContainingText(/\b(found|missing|free|lost|looking for this)( a)*( sweet)*( male| female)* (poor guy|boxer|pup|whippet|pet|black lab|cat|dog|kitten|white husky)\b/i)
+    hidePostsContainingText(/\b(found|missing|free|lost|looking for this)( a)*( sweet)*( male| female)* (poor guy|boxers?|pup|whippet|pet|black lab|cat|dog|kitten|white husky)\b/i)
     hidePostsContainingText(/\b(cat|dog|dogs|kitten|white husky|sweet baby is) (went|is|are) missing\b/i)
     hidePostsContainingText(/\bif you see (our|my) (cat|dog|kitten|pup|puppy)\b/i)
     hidePostsContainingText(/\b(foster|my) (kitty|puppy|cat|dog|kitten|rabbit)\b/i)
