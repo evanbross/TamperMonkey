@@ -3,6 +3,7 @@
 // @description  install a button on a matched page that will feed the html to my job scanner
 // @namespace    http://tampermonkey.net/
 // @version      2026-05-10
+// @author       Evan Ross (evan@eross.com)
 // @match        https://jobs.biospace.com/jobs/*
 // @match        https://wellfound.com/jobs/*
 // @match        https://wellfound.com/jobs

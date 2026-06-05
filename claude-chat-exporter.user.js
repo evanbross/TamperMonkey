@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  Export Claude conversations to markdown. Click the Export button next to Share.
-// @author       Anthony Panozzo, Claude (Opus 4.5)
+// @author       Evan Ross (evan@eross.com)
 // @homepageURL  https://github.com/agarwalvishal/claude-chat-exporter
 // @match        https://claude.ai/chat/*
 // @grant        none

@@ -3,6 +3,7 @@
 // @description  Install a button on any page that sends the current URL to the local Recipe App for capture.
 // @namespace    http://tampermonkey.net/
 // @version      2026-05-16
+// @author       Evan Ross (evan@eross.com)
 // @match        https://www.177milkstreet.com/recipes/*
 // @match        https://www.seriouseats.com/*
 // @match        https://thewoksoflife.com/*

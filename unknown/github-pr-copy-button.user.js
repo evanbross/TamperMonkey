@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      3.0
 // @description  A resilient script that adds a copy button to classic and modern GitHub views (PR, Issue, Project).
-// @author       You
+// @author       Evan Ross (evan@eross.com)
 // @match        https://github.com/*/*/pull/*
 // @match        https://github.com/*/*/issues/*
 // @match        https://github.com/*/*/projects/*
