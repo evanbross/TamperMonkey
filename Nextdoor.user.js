@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-06-11
+// @version      2026-06-18.4
 // @description  try to take over the world!
-// @author       Evan Ross (evan@eross.com)
+// @author       You
 // @match        https://nextdoor.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nextdoor.com
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
@@ -16,53 +16,100 @@
   console.log('in custom script')
   const $ = window.$
 
-  // I wonder if by setting size to zero the server still thinks the element
-  // is being displayes so it won't detect that I'm filtering it?
-  // would this let them still think that ads are displayed so they get their revenue?
+  // ai: claude-sonnet-4-6 | 2026-06-18
+  // Set to true to log filter matches to the console instead of hiding posts.
+  // Helps diagnose which filter is too broad if posts disappear unexpectedly.
+  // Check the browser console (F12) and look for [nextdoor] lines.
+  const DEBUG = false
+
+  // ai: claude-sonnet-4-6 | 2026-06-18
+  function hideOrLog($els, label) {
+    if (!$els.length) return
+    if (DEBUG) {
+      $els.each(function () {
+        console.log(`[nextdoor] ${label} →`, $(this).text().slice(0, 120).replace(/\s+/g, ' '))
+      })
+    } else {
+      $els.hide()
+    }
+  }
+
   function hideElement(element) {
       element.css({'width': '0',
                    'height': '0',
                    'overflow': 'hidden'})
   }
 
+  // ai: claude-sonnet-4-6 | 2026-06-18
   function hidePostsContainingText(regex) {
-    //const $posts = $('span[data-testid="feed-item-visibility-tracker"] span')
     const $posts = $('div[data-testid="feed-item-card"]')
-    $posts
-      .filter(function () {
-        const text = $(this).text()
-        return regex.test(text)
-      })
-      .hide()
+    const $matching = $posts.filter(function () {
+      return regex.test($(this).text())
+    })
+    hideOrLog($matching, String(regex))
   }
 
+  // ai: claude-sonnet-4-6 | 2026-06-18
   function hidePostsTitled(title) {
     const $posts = $('span[data-testid="feed-item-visibility-tracker"] span')
-    $posts.has(`h2:contains('${title}')`).hide()
+    hideOrLog($posts.has(`h2:contains('${title}')`), `title:${title}`)
   }
 
+  // ai: claude-sonnet-4-6 | 2026-06-18
   function hideForSale() {
-    const $posts = $('div[data-testid="feed-item-card"]:has(a[href="/for_sale_and_free/"])')
-    $posts.hide()
+    hideOrLog(
+      $('div[data-testid="feed-item-card"]:has(a[href="/for_sale_and_free/"])'),
+      'for-sale'
+    )
   }
 
+  // ai: claude-sonnet-4-6 | 2026-06-18
+  // Adds a ✕ Hide button to each post card. The button is idempotent — safe
+  // to call repeatedly from setInterval since it skips cards that already
+  // have one. Clicking immediately hides the card for the current page load.
+  function addHideButtons() {
+    $('div[data-testid="feed-item-card"]').each(function () {
+      const $post = $(this)
+      if ($post.find('.nd-hide-btn').length) return
+      $post.css('position', 'relative')
+      $('<button class="nd-hide-btn">✕ Hide</button>')
+        .css({
+          position: 'absolute',
+          top: '8px',
+          right: '48px',
+          zIndex: 9999,
+          padding: '3px 10px',
+          background: '#e0e0e0',
+          border: '1px solid #999',
+          borderRadius: '999px',
+          cursor: 'pointer',
+          fontSize: '11px',
+          fontWeight: '600',
+          color: '#222',
+          opacity: '0.6',
+        })
+        .on('mouseenter', function () { $(this).css('opacity', '1') })
+        .on('mouseleave', function () { $(this).css('opacity', '0.6') })
+        .on('click', function (e) {
+          e.stopPropagation()
+          $post.hide()
+        })
+        .appendTo($post)
+    })
+  }
 
   // Shared word-lists used across multiple animal-post regexes below.
   const PETS = 'cats?|dogs?|kittens?|puppy|puppies|pups?|pets?|rabbits?|kitt(?:y|ies)'
   const LOST_FOUND_VERBS = 'roaming|loose|wandering|lost|missing|rehoming|found|foster'
   const COMMON_BREEDS = 'lab setter|beagle|husky|black lab|german shepherd|bulldog|poodle|pitbulls?|chihuahua|affenpinscher|lab retriever|tabby'
-  const ADJECTIVES = 'sweet|small|male|female|brown|black|white|orange|2|year old'
+  const ADJECTIVES = 'two|wonderful|sweet|small|male|female|brown|black|white|orange|2|years? old'
 
   function hideStuff() {
-    // hide ad sidebar
-    //$(
-      //'.hidden-xs.hidden-sm.col-md-12.col-lg-4.info-bar-container.with-navbar'
-    //).hide()
-
+    // ai: claude-sonnet-4-6 | 2026-06-18
     const $posts = $('span[data-testid="feed-item-visibility-tracker"] span')
 
     // hide promoted posts
-    $posts.has('div span:contains("Sponsored")').hide()
+    hideOrLog($posts.has('div span:contains("Sponsored")'), 'sponsored')
 
     // Get rid of all the For Sale ads
     hideForSale()
@@ -75,7 +122,7 @@
     hidePostsContainingText(/\b(rehoming|rehome)( my)?( two)?\b/i)
     hidePostsContainingText(/\b(up|available) for adoption\b/i)
     hidePostsContainingText(/\b(wearing a collar|collar but no tag)\b/i)
-    hidePostsContainingText(/\b^please share\b/i)
+    hidePostsContainingText(/\bplease share\b/i)
     hidePostsContainingText(/\banimal (shelter|services)\b/i)
     hidePostsContainingText(/\b(animal rescue|reunited)\b/i)
     hidePostsContainingText(/\bdog (on the loose|in my yard)\b/i)
@@ -118,6 +165,8 @@
     hidePostsTitled('Items for sale near you')
     hidePostsTitled('New free listings')
     hidePostsTitled('New listings for you')
+
+    addHideButtons()
   }
 
   setInterval(hideStuff, 500)
