@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-06-19.1
+// @version      2026-06-19.3
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -118,10 +118,6 @@
     $('div[data-testid="feed-item-card"]').each(function () {
       const $post = $(this)
       if ($post.find('.nd-hide-btn').length) return
-      const feedItemId = getFeedItemId($post)
-      if (!feedItemId) {
-        console.warn('[nextdoor] could not extract feedItemId; server mute unavailable for this card')
-      }
       $post.css('position', 'relative')
       $('<button class="nd-hide-btn">✕ Hide</button>')
         .css({
@@ -141,12 +137,19 @@
         })
         .on('mouseenter', function () { $(this).css('opacity', '1') })
         .on('mouseleave', function () { $(this).css('opacity', '0.6') })
+        // ai: claude-sonnet-4-6 | 2026-06-19
+        // feedItemId is resolved at click time, not attach time, because Nextdoor
+        // renders card links asynchronously — the /p/ href may not exist yet when
+        // the 500ms timer first sees the card.
         .on('click', function (e) {
           e.stopPropagation()
           const $btn = $(this)
           $btn.text('Hiding…').prop('disabled', true)
+          const feedItemId = getFeedItemId($post)
           if (feedItemId) {
             mutePostOnServer(feedItemId).catch(err => console.warn('[nextdoor] muteFeedItem error:', err))
+          } else {
+            console.warn('[nextdoor] could not extract feedItemId; hiding locally only')
           }
           $post.hide()
         })
