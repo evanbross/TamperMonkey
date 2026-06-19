@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-06-18.4
+// @version      2026-06-19.1
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -63,14 +63,65 @@
     )
   }
 
+  // ai: claude-sonnet-4-6 | 2026-06-19
+  function getCsrfToken() {
+    const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)
+    return m ? m[1] : ''
+  }
+
+  // ai: claude-sonnet-4-6 | 2026-06-19
+  // Posts in the news feed have a permalink like /p/4mY4LFfH6--d/ inside the card.
+  // The sharedPost_ prefix covers regular shared posts in the news feed; other feed
+  // item types (events, business posts) use different paths and won't match /p/.
+  function getFeedItemId($post) {
+    const href = $post.find('a[href*="/p/"]').first().attr('href') || ''
+    const m = href.match(/\/p\/([A-Za-z0-9_-]+)/)
+    return m ? `sharedPost_${m[1]}` : null
+  }
+
+  // ai: claude-sonnet-4-6 | 2026-06-19
+  // Calls the muteFeedItem GraphQL mutation so Nextdoor permanently hides this
+  // post from the user's feed — same effect as kebab → Hide → Confirm.
+  // The persisted query hash was captured from the real site request.
+  async function mutePostOnServer(feedItemId) {
+    const res = await fetch('https://nextdoor.com/api/gql/muteFeedItem?', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'content-type': 'application/json',
+        'x-csrftoken': getCsrfToken(),
+        'x-nd-cts': String(Date.now()),
+        'x-nd-request-locale': 'US',
+      },
+      body: JSON.stringify({
+        operationName: 'muteFeedItem',
+        variables: { input: { feedItemId, mute: true } },
+        extensions: {
+          persistedQuery: {
+            version: 1,
+            sha256Hash: '67b8b83a6c40357304ed1df2ca7f0a78ec90b80faa7f76a060e4ecb4e51e09dd',
+          },
+        },
+      }),
+    })
+    if (!res.ok) {
+      console.warn(`[nextdoor] muteFeedItem HTTP ${res.status} for ${feedItemId}`)
+    }
+    return res.ok
+  }
+
   // ai: claude-sonnet-4-6 | 2026-06-18
   // Adds a ✕ Hide button to each post card. The button is idempotent — safe
   // to call repeatedly from setInterval since it skips cards that already
-  // have one. Clicking immediately hides the card for the current page load.
+  // have one. Clicking hides the card locally AND mutes it server-side.
   function addHideButtons() {
     $('div[data-testid="feed-item-card"]').each(function () {
       const $post = $(this)
       if ($post.find('.nd-hide-btn').length) return
+      const feedItemId = getFeedItemId($post)
+      if (!feedItemId) {
+        console.warn('[nextdoor] could not extract feedItemId; server mute unavailable for this card')
+      }
       $post.css('position', 'relative')
       $('<button class="nd-hide-btn">✕ Hide</button>')
         .css({
@@ -92,6 +143,11 @@
         .on('mouseleave', function () { $(this).css('opacity', '0.6') })
         .on('click', function (e) {
           e.stopPropagation()
+          const $btn = $(this)
+          $btn.text('Hiding…').prop('disabled', true)
+          if (feedItemId) {
+            mutePostOnServer(feedItemId).catch(err => console.warn('[nextdoor] muteFeedItem error:', err))
+          }
           $post.hide()
         })
         .appendTo($post)
