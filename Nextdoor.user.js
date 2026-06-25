@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-06-19.3
+// @version      2026-06-22.1
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -201,12 +201,13 @@
 
     // animal-related posts built from shared word lists
     hidePostsContainingText(new RegExp(`\\b(${PETS}) (${LOST_FOUND_VERBS}|available)\\b`, 'i'))
+    hidePostsContainingText(new RegExp(`\\b(${LOST_FOUND_VERBS}) (a |an |the )?((${ADJECTIVES}) )*(${PETS})\\b`, 'i'))
     hidePostsContainingText(new RegExp(`\\b(${PETS}) (food|rescue)\\b`, 'i'))
     hidePostsContainingText(new RegExp(`\\b(${PETS}|white husky|sweet baby is) (went|is|are) missing\\b`, 'i'))
     hidePostsContainingText(new RegExp(`\\b((${ADJECTIVES}) )*(${COMMON_BREEDS}|cat|petsmart)\\b`, 'i'))
     hidePostsContainingText(new RegExp(`\\b(foster|my) (kitty|puppy|cat|dog|kitten|rabbit)\\b`, 'i'))
     hidePostsContainingText(new RegExp(`\\b(found|missing|free|lost|looking for this|2|small)( a)*((${ADJECTIVES}) )*(poor guy|boxers?|whippet|white husky|${COMMON_BREEDS}|${PETS})\\b`, 'i'))
-    hidePostsContainingText(new RegExp(`\\b(seen a|${LOST_FOUND_VERBS}) (${PETS})\\b`, 'i'))
+    hidePostsContainingText(new RegExp(`\\b(seen a|${LOST_FOUND_VERBS}) (a |an |the )?((${ADJECTIVES}) )*(${PETS})\\b`, 'i'))
     hidePostsContainingText(new RegExp(`\\bif you see (our|my) (${PETS})\\b`, 'i'))
     hidePostsContainingText(new RegExp(`\\bour beloved (${PETS}|pet)\\b`, 'i'))
     hidePostsContainingText(new RegExp(`\\brecognize this (kitty|${PETS})\\b`, 'i'))
