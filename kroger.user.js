@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kroger And Harris Teeter Clip All Coupons
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  Clean up Kroger pages and clip all visible coupon buttons on Kroger and Harris Teeter coupon pages
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.kroger.com/*
@@ -20,6 +20,9 @@
   const CLICK_DELAY_MS = 300
   const PASS_DELAY_MS = 1200
   const MAX_PASSES = 50
+  const SCROLL_STEP_PX = 600
+  const SCROLL_WAIT_MS = 350
+  const BOTTOM_STABLE_CHECKS = 3
 
   // make original price easier to read (by default it is crossed out)
   const style = document.createElement('style')
@@ -104,14 +107,24 @@
     })
   }
 
-  async function clickAllCouponButtons() {
-    const clicked = new WeakSet()
-    let totalClicked = 0
+  // ai: claude-sonnet-5 | 2026-07-10
+  // Coupon pages with many already-clipped coupons render as a long/virtualized
+  // list, so unclipped coupons near the bottom don't exist in the DOM until the
+  // page is actually scrolled down to them. Relying on scrollIntoView of buttons
+  // already found (the old approach) never advances the scroll position when the
+  // top of the page has nothing left to click, so the bottom is never reached.
+  // This sweeps the page from top to bottom in fixed increments every pass,
+  // clicking any coupon buttons that become visible along the way.
+  async function sweepPageAndClick(clicked) {
+    let clickedThisSweep = 0
+    let lastScrollHeight = -1
+    let stableCount = 0
 
-    for (let pass = 0; pass < MAX_PASSES; pass += 1) {
-      let clickedThisPass = 0
+    window.scrollTo(0, 0)
+    await sleep(SCROLL_WAIT_MS)
+
+    for (;;) {
       const couponButtons = getCouponButtons()
-
       for (const element of couponButtons) {
         if (clicked.has(element)) {
           continue
@@ -121,10 +134,35 @@
         await sleep(250)
         element.click()
         clicked.add(element)
-        totalClicked += 1
-        clickedThisPass += 1
+        clickedThisSweep += 1
         await sleep(CLICK_DELAY_MS)
       }
+
+      const scrollHeight = document.documentElement.scrollHeight
+      const atBottom = window.scrollY + window.innerHeight >= scrollHeight - 10
+
+      if (atBottom) {
+        stableCount = scrollHeight === lastScrollHeight ? stableCount + 1 : 0
+        if (stableCount >= BOTTOM_STABLE_CHECKS) {
+          break
+        }
+      }
+
+      lastScrollHeight = scrollHeight
+      window.scrollBy(0, SCROLL_STEP_PX)
+      await sleep(SCROLL_WAIT_MS)
+    }
+
+    return clickedThisSweep
+  }
+
+  async function clickAllCouponButtons() {
+    const clicked = new WeakSet()
+    let totalClicked = 0
+
+    for (let pass = 0; pass < MAX_PASSES; pass += 1) {
+      const clickedThisPass = await sweepPageAndClick(clicked)
+      totalClicked += clickedThisPass
 
       if (clickedThisPass === 0) {
         console.log(`Kroger clip-all finished. Clicked ${totalClicked} coupon buttons.`)
