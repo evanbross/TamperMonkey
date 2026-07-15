@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         Food Lion Clip All Coupons
 // @namespace    https://www.foodlion.com/
-// @version      1.0
-// @description  Click all visible coupon buttons on Food Lion and Lowe's Foods digital coupons pages
+// @version      1.1
+// @description  Click all visible coupon buttons on Food Lion digital coupons pages
 // @author       Evan Ross (evan@eross.com)
 // @match        https://foodlion.com/savings/coupons/browse*
 // @match        https://www.foodlion.com/savings/coupons/browse*
-// @match        https://shop.lowesfoods.com/promotions*
 // @grant        none
 // ==/UserScript==
 
