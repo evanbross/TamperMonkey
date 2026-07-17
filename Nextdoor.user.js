@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-06-22.1
+// @version      2026-07-15.1
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -44,7 +44,14 @@
   function hidePostsContainingText(regex) {
     const $posts = $('div[data-testid="feed-item-card"]')
     const $matching = $posts.filter(function () {
-      return regex.test($(this).text())
+      // ai: claude-fable-5 | 2026-07-15
+      // jQuery .text() concatenates adjacent elements with no separator
+      // ("5 hr agoPet sitting"), which destroys the \b word boundary the
+      // filter regexes rely on. innerText keeps rendered whitespace between
+      // elements; collapsing runs of whitespace (incl. NBSP and newlines) to
+      // a single space lets the literal spaces in the regexes match.
+      const text = (this.innerText || this.textContent || '').replace(/\s+/g, ' ')
+      return regex.test(text)
     })
     hideOrLog($matching, String(regex))
   }
