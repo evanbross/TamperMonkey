@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lowes Foods Clip All Coupons
 // @namespace    https://shop.lowesfoods.com/
-// @version      1.0
+// @version      2026-07-31
 // @description  Click all CLIP! buttons on the Lowes Foods promotions page, pressing Show More until every coupon is loaded
 // @author       Evan Ross (evan@eross.com)
 // @match        https://shop.lowesfoods.com/promotions*
@@ -29,11 +29,12 @@
 ;(function () {
   'use strict'
 
-  const INITIAL_DELAY_MS = 2500
   const CLICK_DELAY_MS = 300
   const PASS_DELAY_MS = 1200
   const SHOW_MORE_WAIT_MS = 2500
   const MAX_PASSES = 100
+  const INITIAL_WAIT_TIMEOUT_MS = 15000
+  const SETTLE_WAIT_TIMEOUT_MS = 4000
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms))
@@ -99,6 +100,34 @@
     )
   }
 
+  // The coupon grid renders after an async data fetch that completes well
+  // after the page's 'load' event, so a fixed delay is not reliable — wait
+  // for the grid to actually populate (or time out) instead of guessing.
+  // ai: claude-sonnet-5 | 2026-07-31
+  function waitForCoupons(timeoutMs) {
+    return new Promise((resolve) => {
+      if (getCouponButtons().length > 0 || getShowMoreButton()) {
+        resolve()
+        return
+      }
+
+      const observer = new MutationObserver(() => {
+        if (getCouponButtons().length > 0 || getShowMoreButton()) {
+          observer.disconnect()
+          clearTimeout(timer)
+          resolve()
+        }
+      })
+
+      observer.observe(document.body, { childList: true, subtree: true })
+
+      const timer = setTimeout(() => {
+        observer.disconnect()
+        resolve()
+      }, timeoutMs)
+    })
+  }
+
   async function clickAllCouponButtons() {
     const clicked = new WeakSet()
     let totalClicked = 0
@@ -131,6 +160,12 @@
           continue
         }
 
+        // ai: claude-sonnet-5 | 2026-07-31
+        await waitForCoupons(SETTLE_WAIT_TIMEOUT_MS)
+        if (getCouponButtons().length > 0 || getShowMoreButton()) {
+          continue
+        }
+
         console.log(`Lowes Foods clip-all finished. Clicked ${totalClicked} coupon buttons.`)
         window.alert(`Finished. Clicked ${totalClicked} coupon buttons.`)
         return
@@ -144,7 +179,7 @@
   }
 
   async function run() {
-    await sleep(INITIAL_DELAY_MS)
+    await waitForCoupons(INITIAL_WAIT_TIMEOUT_MS)
     await clickAllCouponButtons()
   }
 
