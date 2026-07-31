@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Food Lion Clip All Coupons
 // @namespace    https://www.foodlion.com/
-// @version      1.1
+// @version      2026-07-31.2
 // @description  Click all visible coupon buttons on Food Lion digital coupons pages
 // @author       Evan Ross (evan@eross.com)
 // @match        https://foodlion.com/savings/coupons/browse*
@@ -12,10 +12,11 @@
 (function () {
   "use strict";
 
-  const INITIAL_DELAY_MS = 2500;
   const CLICK_DELAY_MS = 300;
   const PASS_DELAY_MS = 1200;
   const MAX_PASSES = 50;
+  const INITIAL_WAIT_TIMEOUT_MS = 15000;
+  const SETTLE_WAIT_TIMEOUT_MS = 4000;
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -78,6 +79,33 @@
     });
   }
 
+  // The coupon grid can render well after the page's load event, so wait for
+  // actual content instead of guessing a fixed delay.
+  // ai: claude-sonnet-5 | 2026-07-31
+  function waitForCoupons(timeoutMs) {
+    return new Promise((resolve) => {
+      if (getCouponButtons().length > 0) {
+        resolve();
+        return;
+      }
+
+      const observer = new MutationObserver(() => {
+        if (getCouponButtons().length > 0) {
+          observer.disconnect();
+          clearTimeout(timer);
+          resolve();
+        }
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      const timer = setTimeout(() => {
+        observer.disconnect();
+        resolve();
+      }, timeoutMs);
+    });
+  }
+
   async function clickAllCouponButtons() {
     const clicked = new WeakSet();
     let totalClicked = 0;
@@ -101,6 +129,11 @@
       }
 
       if (clickedThisPass === 0) {
+        await waitForCoupons(SETTLE_WAIT_TIMEOUT_MS);
+        if (getCouponButtons().length > 0) {
+          continue;
+        }
+
         console.log(`Food Lion clip-all finished. Clicked ${totalClicked} coupon buttons.`);
         alert(`Finished. Clicked ${totalClicked} coupon buttons.`);
         return;
@@ -114,7 +147,7 @@
   }
 
   async function run() {
-    await sleep(INITIAL_DELAY_MS);
+    await waitForCoupons(INITIAL_WAIT_TIMEOUT_MS);
     await clickAllCouponButtons();
   }
 

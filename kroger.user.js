@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kroger And Harris Teeter Clip All Coupons
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      2026-07-31.1
 // @description  Clean up Kroger pages and clip all visible coupon buttons on Kroger and Harris Teeter coupon pages
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.kroger.com/*
@@ -16,13 +16,14 @@
 ;(function () {
   'use strict'
   console.log('in Kroger userscript')
-  const INITIAL_DELAY_MS = 2500
   const CLICK_DELAY_MS = 300
   const PASS_DELAY_MS = 1200
   const MAX_PASSES = 50
   const SCROLL_STEP_PX = 600
   const SCROLL_WAIT_MS = 350
   const BOTTOM_STABLE_CHECKS = 3
+  const INITIAL_WAIT_TIMEOUT_MS = 15000
+  const SETTLE_WAIT_TIMEOUT_MS = 4000
 
   // make original price easier to read (by default it is crossed out)
   const style = document.createElement('style')
@@ -107,6 +108,33 @@
     })
   }
 
+  // The coupon grid can render well after the page's load event, so wait for
+  // actual content instead of guessing a fixed delay.
+  // ai: claude-sonnet-5 | 2026-07-31
+  function waitForCoupons(timeoutMs) {
+    return new Promise((resolve) => {
+      if (getCouponButtons().length > 0) {
+        resolve()
+        return
+      }
+
+      const observer = new MutationObserver(() => {
+        if (getCouponButtons().length > 0) {
+          observer.disconnect()
+          clearTimeout(timer)
+          resolve()
+        }
+      })
+
+      observer.observe(document.body, { childList: true, subtree: true })
+
+      const timer = setTimeout(() => {
+        observer.disconnect()
+        resolve()
+      }, timeoutMs)
+    })
+  }
+
   // ai: claude-sonnet-5 | 2026-07-10
   // Coupon pages with many already-clipped coupons render as a long/virtualized
   // list, so unclipped coupons near the bottom don't exist in the DOM until the
@@ -165,6 +193,11 @@
       totalClicked += clickedThisPass
 
       if (clickedThisPass === 0) {
+        await waitForCoupons(SETTLE_WAIT_TIMEOUT_MS)
+        if (getCouponButtons().length > 0) {
+          continue
+        }
+
         console.log(`Kroger clip-all finished. Clicked ${totalClicked} coupon buttons.`)
         alert(`Finished. Clicked ${totalClicked} coupon buttons.`)
         return
@@ -201,11 +234,11 @@
   setInterval(hideStuff, 500)
 
   window.addEventListener('load', () => {
-    window.setTimeout(() => {
+    waitForCoupons(INITIAL_WAIT_TIMEOUT_MS).then(() => {
       clickAllCouponButtons().catch((error) => {
         console.error('Kroger clip-all script failed:', error)
         alert(`Script failed: ${error.message}`)
       })
-    }, INITIAL_DELAY_MS)
+    })
   })
 })()

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Carlie C's Clip All Coupons
 // @namespace    https://www.carliecs.com/
-// @version      1.0
+// @version      2026-07-31.2
 // @description  Click all visible Clip buttons on Carlie C's digital coupons pages and related AppCard frames
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.carliecs.com/digital-coupons*
@@ -14,10 +14,11 @@
 (function () {
   "use strict";
 
-  const INITIAL_DELAY_MS = 2500;
   const CLICK_DELAY_MS = 300;
   const PASS_DELAY_MS = 1200;
   const MAX_PASSES = 50;
+  const INITIAL_WAIT_TIMEOUT_MS = 15000;
+  const SETTLE_WAIT_TIMEOUT_MS = 4000;
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -71,6 +72,34 @@
     });
   }
 
+  // The clip widgets (including the AppCard iframe) can render well after
+  // the page's load event, so wait for actual content instead of guessing a
+  // fixed delay.
+  // ai: claude-sonnet-5 | 2026-07-31
+  function waitForClipElements(timeoutMs) {
+    return new Promise((resolve) => {
+      if (getClickableClipElements().length > 0) {
+        resolve();
+        return;
+      }
+
+      const observer = new MutationObserver(() => {
+        if (getClickableClipElements().length > 0) {
+          observer.disconnect();
+          clearTimeout(timer);
+          resolve();
+        }
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      const timer = setTimeout(() => {
+        observer.disconnect();
+        resolve();
+      }, timeoutMs);
+    });
+  }
+
   async function clickAllClipButtons() {
     const clicked = new WeakSet();
     let totalClicked = 0;
@@ -94,6 +123,11 @@
       }
 
       if (clickedThisPass === 0) {
+        await waitForClipElements(SETTLE_WAIT_TIMEOUT_MS);
+        if (getClickableClipElements().length > 0) {
+          continue;
+        }
+
         console.log(`Carlie C's clip-all finished. Clicked ${totalClicked} coupon buttons.`);
         alert(`Finished. Clicked ${totalClicked} coupon buttons.`);
         return;
@@ -107,7 +141,7 @@
   }
 
   async function run() {
-    await sleep(INITIAL_DELAY_MS);
+    await waitForClipElements(INITIAL_WAIT_TIMEOUT_MS);
     await clickAllClipButtons();
   }
 
