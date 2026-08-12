@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Food Lion Clip All Coupons
 // @namespace    https://www.foodlion.com/
-// @version      2026-08-12
+// @version      2026-08-12.1
 // @description  Click all visible coupon buttons on Food Lion digital coupons pages
 // @author       Evan Ross (evan@eross.com)
-// @match        https://foodlion.com/savings/coupons/browse*
-// @match        https://www.foodlion.com/savings/coupons/browse*
+// @match        https://foodlion.com/*
+// @match        https://www.foodlion.com/*
 // @grant        none
 // ==/UserScript==
 
@@ -151,22 +151,59 @@
     await clickAllCouponButtons();
   }
 
-  function start() {
-    run().catch((error) => {
-      console.error("Food Lion clip-all script failed:", error);
-      alert(`Script failed: ${error.message}`);
-    });
+  const COUPONS_PATH_RE = /^\/savings\/coupons\/browse/;
+  let running = false;
+
+  function isCouponsPage() {
+    return COUPONS_PATH_RE.test(location.pathname);
   }
 
-  // On a real page load, "load" hasn't fired yet when this attaches, so the
-  // listener catches it. But when navigating here via the site's own SPA
-  // routing (e.g. clicking from the homepage to the coupons page),
-  // Tampermonkey re-injects the script for the new URL after "load" has
-  // already fired, so the event is missed unless we check readyState here.
+  function start() {
+    if (running || !isCouponsPage()) {
+      return;
+    }
+    running = true;
+    run()
+      .catch((error) => {
+        console.error("Food Lion clip-all script failed:", error);
+        alert(`Script failed: ${error.message}`);
+      })
+      .finally(() => {
+        running = false;
+      });
+  }
+
+  // @match now covers the whole site (not just the coupons path) so this
+  // script is present from the moment you land on the homepage. Food Lion is
+  // a client-routed SPA: clicking Coupons from the hamburger menu updates the
+  // URL via history.pushState instead of a real navigation, which never fires
+  // a fresh "load" event and never triggers Tampermonkey's own document-match
+  // re-injection (that only happens on an actual navigation to a matching
+  // URL). Hooking pushState/replaceState/popstate lets the script notice the
+  // SPA route change itself and start once the path becomes the coupons page.
   // ai: claude-sonnet-5 | 2026-08-12
+  function watchForCouponsRoute() {
+    const originalPushState = history.pushState;
+    history.pushState = function (...args) {
+      const result = originalPushState.apply(this, args);
+      start();
+      return result;
+    };
+
+    const originalReplaceState = history.replaceState;
+    history.replaceState = function (...args) {
+      const result = originalReplaceState.apply(this, args);
+      start();
+      return result;
+    };
+
+    window.addEventListener("popstate", start);
+  }
+
   if (document.readyState === "complete") {
     start();
   } else {
     window.addEventListener("load", start);
   }
+  watchForCouponsRoute();
 })();
