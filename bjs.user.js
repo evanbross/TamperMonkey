@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              BJ's Wholesale Club Coupon Clicker
 // @namespace         bjs-wholesale-coupon
-// @version           2026-07-31.2
+// @version           2026-08-12
 // @description       Click all the coupons on BJ's Wholesale Club website
 // @author            sleevetrick
 // @match             https://www.bjs.com/myCoupons
@@ -124,12 +124,23 @@
     await clipCoupons(0)
   }
 
-  window.addEventListener('load', () => {
+  function start() {
     waitForReady(READY_WAIT_TIMEOUT_MS).then(() => {
       loadFrame().catch((error) => {
         console.error("BJ's clip-all script failed:", error)
         window.alert(`Script failed: ${error.message}`)
       })
     })
-  })
+  }
+
+  // On a real page load, "load" hasn't fired yet when this attaches, so the
+  // listener catches it. But when navigating here via the site's own SPA
+  // routing, Tampermonkey re-injects the script for the new URL after "load"
+  // has already fired, so the event is missed unless we check readyState here.
+  // ai: claude-sonnet-5 | 2026-08-12
+  if (document.readyState === 'complete') {
+    start()
+  } else {
+    window.addEventListener('load', start)
+  }
 })()

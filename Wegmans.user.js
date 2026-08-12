@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wegmans Clip All Coupons
 // @namespace    https://www.wegmans.com/shop/coupons
-// @version      2026-07-31.2
+// @version      2026-08-12
 // @description  Scroll to load all Wegmans coupons and click every Clip button
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.wegmans.com/shop/coupons*
@@ -111,10 +111,21 @@
     await clickAllClipButtons();
   }
 
-  window.addEventListener("load", () => {
+  function start() {
     run().catch((error) => {
       console.error("Wegmans clip-all script failed:", error);
       alert(`Script failed: ${error.message}`);
     });
-  });
+  }
+
+  // On a real page load, "load" hasn't fired yet when this attaches, so the
+  // listener catches it. But when navigating here via the site's own SPA
+  // routing, Tampermonkey re-injects the script for the new URL after "load"
+  // has already fired, so the event is missed unless we check readyState here.
+  // ai: claude-sonnet-5 | 2026-08-12
+  if (document.readyState === "complete") {
+    start();
+  } else {
+    window.addEventListener("load", start);
+  }
 })();

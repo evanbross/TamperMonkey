@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Food Lion Clip All Coupons
 // @namespace    https://www.foodlion.com/
-// @version      2026-07-31.2
+// @version      2026-08-12
 // @description  Click all visible coupon buttons on Food Lion digital coupons pages
 // @author       Evan Ross (evan@eross.com)
 // @match        https://foodlion.com/savings/coupons/browse*
@@ -151,10 +151,22 @@
     await clickAllCouponButtons();
   }
 
-  window.addEventListener("load", () => {
+  function start() {
     run().catch((error) => {
       console.error("Food Lion clip-all script failed:", error);
       alert(`Script failed: ${error.message}`);
     });
-  });
+  }
+
+  // On a real page load, "load" hasn't fired yet when this attaches, so the
+  // listener catches it. But when navigating here via the site's own SPA
+  // routing (e.g. clicking from the homepage to the coupons page),
+  // Tampermonkey re-injects the script for the new URL after "load" has
+  // already fired, so the event is missed unless we check readyState here.
+  // ai: claude-sonnet-5 | 2026-08-12
+  if (document.readyState === "complete") {
+    start();
+  } else {
+    window.addEventListener("load", start);
+  }
 })();

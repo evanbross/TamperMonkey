@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kroger And Harris Teeter Clip All Coupons
 // @namespace    http://tampermonkey.net/
-// @version      2026-07-31.1
+// @version      2026-08-12
 // @description  Clean up Kroger pages and clip all visible coupon buttons on Kroger and Harris Teeter coupon pages
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.kroger.com/*
@@ -233,12 +233,23 @@
 
   setInterval(hideStuff, 500)
 
-  window.addEventListener('load', () => {
+  function start() {
     waitForCoupons(INITIAL_WAIT_TIMEOUT_MS).then(() => {
       clickAllCouponButtons().catch((error) => {
         console.error('Kroger clip-all script failed:', error)
         alert(`Script failed: ${error.message}`)
       })
     })
-  })
+  }
+
+  // On a real page load, "load" hasn't fired yet when this attaches, so the
+  // listener catches it. But when navigating here via the site's own SPA
+  // routing, Tampermonkey re-injects the script for the new URL after "load"
+  // has already fired, so the event is missed unless we check readyState here.
+  // ai: claude-sonnet-5 | 2026-08-12
+  if (document.readyState === 'complete') {
+    start()
+  } else {
+    window.addEventListener('load', start)
+  }
 })()

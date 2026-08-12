@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lowes Foods Clip All Coupons
 // @namespace    https://shop.lowesfoods.com/
-// @version      2026-07-31
+// @version      2026-08-12
 // @description  Click all CLIP! buttons on the Lowes Foods promotions page, pressing Show More until every coupon is loaded
 // @author       Evan Ross (evan@eross.com)
 // @match        https://shop.lowesfoods.com/promotions*
@@ -183,10 +183,21 @@
     await clickAllCouponButtons()
   }
 
-  window.addEventListener('load', () => {
+  function start() {
     run().catch((error) => {
       console.error('Lowes Foods clip-all script failed:', error)
       window.alert(`Script failed: ${error.message}`)
     })
-  })
+  }
+
+  // On a real page load, "load" hasn't fired yet when this attaches, so the
+  // listener catches it. But when navigating here via the site's own SPA
+  // routing, Tampermonkey re-injects the script for the new URL after "load"
+  // has already fired, so the event is missed unless we check readyState here.
+  // ai: claude-sonnet-5 | 2026-08-12
+  if (document.readyState === 'complete') {
+    start()
+  } else {
+    window.addEventListener('load', start)
+  }
 })()

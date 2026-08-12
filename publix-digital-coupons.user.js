@@ -35,7 +35,7 @@
 // ==UserScript==
 // @name         Publix Clip All Digital Coupons
 // @namespace    http://tampermonkey.net/
-// @version      2026-06-06.5
+// @version      2026-08-12
 // @description  Automatically clip all visible digital coupons on the Publix savings page
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.publix.com/savings/digital-coupons*
@@ -192,7 +192,7 @@
     alert(`Stopped after ${MAX_PASSES} passes. Clipped ${totalClicked} coupons.`)
   }
 
-  window.addEventListener('load', () => {
+  function start() {
     waitForContent().then((found) => {
       if (!found) {
         console.warn('Publix clip-all: timed out waiting for coupon content.')
@@ -204,5 +204,16 @@
         alert(`Script failed: ${error.message}`)
       })
     })
-  })
+  }
+
+  // On a real page load, "load" hasn't fired yet when this attaches, so the
+  // listener catches it. But when navigating here via the site's own SPA
+  // routing, Tampermonkey re-injects the script for the new URL after "load"
+  // has already fired, so the event is missed unless we check readyState here.
+  // ai: claude-sonnet-5 | 2026-08-12
+  if (document.readyState === 'complete') {
+    start()
+  } else {
+    window.addEventListener('load', start)
+  }
 })()
