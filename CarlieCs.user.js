@@ -1,11 +1,10 @@
 // ==UserScript==
 // @name         Carlie C's Clip All Coupons
 // @namespace    https://www.carliecs.com/
-// @version      2026-08-12
+// @version      2026-08-14
 // @description  Click all visible Clip buttons on Carlie C's digital coupons pages and related AppCard frames
 // @author       Evan Ross (evan@eross.com)
-// @match        https://www.carliecs.com/digital-coupons*
-// @match        https://www.carliecs.com/fam-rewards*
+// @match        https://www.carliecs.com/*
 // @match        https://*.appcard.com/*
 // @match        https://appcard.com/*
 // @grant        none
@@ -145,11 +144,60 @@
     await clickAllClipButtons();
   }
 
+  const CARLIECS_PATH_RE = /^\/(digital-coupons|fam-rewards)/;
+  let running = false;
+
+  // The AppCard iframe pages have their own broad @match and aren't a
+  // client-routed part of carliecs.com, so they're always a valid target;
+  // carliecs.com itself is only a target on the two coupon-related paths.
+  function isTargetPage() {
+    if (location.hostname === "appcard.com" || location.hostname.endsWith(".appcard.com")) {
+      return true;
+    }
+    return CARLIECS_PATH_RE.test(location.pathname);
+  }
+
   function start() {
-    run().catch((error) => {
-      console.error("Carlie C's clip-all script failed:", error);
-      alert(`Script failed: ${error.message}`);
-    });
+    if (running || !isTargetPage()) {
+      return;
+    }
+    running = true;
+    run()
+      .catch((error) => {
+        console.error("Carlie C's clip-all script failed:", error);
+        alert(`Script failed: ${error.message}`);
+      })
+      .finally(() => {
+        running = false;
+      });
+  }
+
+  // @match now covers all of carliecs.com (not just the two coupon paths) so
+  // this script is present from the moment you land on the homepage. Like
+  // Food Lion, Carlie C's is a client-routed site: navigating to Digital
+  // Coupons or Fam Rewards updates the URL via history.pushState instead of a
+  // real navigation, which never fires a fresh "load" event and never
+  // triggers Tampermonkey's own document-match re-injection (that only
+  // happens on an actual navigation to a matching URL). Hooking
+  // pushState/replaceState/popstate lets the script notice the SPA route
+  // change itself and start once the path becomes a target page.
+  // ai: claude-sonnet-5 | 2026-08-14
+  function watchForTargetRoute() {
+    const originalPushState = history.pushState;
+    history.pushState = function (...args) {
+      const result = originalPushState.apply(this, args);
+      start();
+      return result;
+    };
+
+    const originalReplaceState = history.replaceState;
+    history.replaceState = function (...args) {
+      const result = originalReplaceState.apply(this, args);
+      start();
+      return result;
+    };
+
+    window.addEventListener("popstate", start);
   }
 
   // On a real page load, "load" hasn't fired yet when this attaches, so the
@@ -162,4 +210,5 @@
   } else {
     window.addEventListener("load", start);
   }
+  watchForTargetRoute();
 })();

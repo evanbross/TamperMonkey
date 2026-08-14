@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Lowes Foods Clip All Coupons
 // @namespace    https://shop.lowesfoods.com/
-// @version      2026-08-12
+// @version      2026-08-14
 // @description  Click all CLIP! buttons on the Lowes Foods promotions page, pressing Show More until every coupon is loaded
 // @author       Evan Ross (evan@eross.com)
-// @match        https://shop.lowesfoods.com/promotions*
+// @match        https://shop.lowesfoods.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=lowesfoods.com
 // @grant        none
 // ==/UserScript==
@@ -183,11 +183,54 @@
     await clickAllCouponButtons()
   }
 
+  const PROMOTIONS_PATH_RE = /^\/promotions/
+  let running = false
+
+  function isPromotionsPage() {
+    return PROMOTIONS_PATH_RE.test(location.pathname)
+  }
+
   function start() {
-    run().catch((error) => {
-      console.error('Lowes Foods clip-all script failed:', error)
-      window.alert(`Script failed: ${error.message}`)
-    })
+    if (running || !isPromotionsPage()) {
+      return
+    }
+    running = true
+    run()
+      .catch((error) => {
+        console.error('Lowes Foods clip-all script failed:', error)
+        window.alert(`Script failed: ${error.message}`)
+      })
+      .finally(() => {
+        running = false
+      })
+  }
+
+  // @match now covers the whole site (not just /promotions) so this script is
+  // present from the moment you land on shop.lowesfoods.com. Like Food Lion,
+  // Lowes Foods is a client-routed SPA: navigating to Promotions from
+  // elsewhere on the site updates the URL via history.pushState instead of a
+  // real navigation, which never fires a fresh "load" event and never
+  // triggers Tampermonkey's own document-match re-injection (that only
+  // happens on an actual navigation to a matching URL). Hooking
+  // pushState/replaceState/popstate lets the script notice the SPA route
+  // change itself and start once the path becomes the promotions page.
+  // ai: claude-sonnet-5 | 2026-08-14
+  function watchForPromotionsRoute() {
+    const originalPushState = history.pushState
+    history.pushState = function (...args) {
+      const result = originalPushState.apply(this, args)
+      start()
+      return result
+    }
+
+    const originalReplaceState = history.replaceState
+    history.replaceState = function (...args) {
+      const result = originalReplaceState.apply(this, args)
+      start()
+      return result
+    }
+
+    window.addEventListener('popstate', start)
   }
 
   // On a real page load, "load" hasn't fired yet when this attaches, so the
@@ -200,4 +243,5 @@
   } else {
     window.addEventListener('load', start)
   }
+  watchForPromotionsRoute()
 })()

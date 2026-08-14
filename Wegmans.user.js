@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Wegmans Clip All Coupons
 // @namespace    https://www.wegmans.com/shop/coupons
-// @version      2026-08-12
+// @version      2026-08-14
 // @description  Scroll to load all Wegmans coupons and click every Clip button
 // @author       Evan Ross (evan@eross.com)
-// @match        https://www.wegmans.com/shop/coupons*
+// @match        https://www.wegmans.com/*
 // @grant        none
 // ==/UserScript==
 
@@ -111,11 +111,54 @@
     await clickAllClipButtons();
   }
 
+  const COUPONS_PATH_RE = /^\/shop\/coupons/;
+  let running = false;
+
+  function isCouponsPage() {
+    return COUPONS_PATH_RE.test(location.pathname);
+  }
+
   function start() {
-    run().catch((error) => {
-      console.error("Wegmans clip-all script failed:", error);
-      alert(`Script failed: ${error.message}`);
-    });
+    if (running || !isCouponsPage()) {
+      return;
+    }
+    running = true;
+    run()
+      .catch((error) => {
+        console.error("Wegmans clip-all script failed:", error);
+        alert(`Script failed: ${error.message}`);
+      })
+      .finally(() => {
+        running = false;
+      });
+  }
+
+  // @match now covers all of wegmans.com (not just /shop/coupons) so this
+  // script is present from the moment you land on the homepage. Like Food
+  // Lion, Wegmans is a client-routed site: navigating to Coupons updates the
+  // URL via history.pushState instead of a real navigation, which never
+  // fires a fresh "load" event and never triggers Tampermonkey's own
+  // document-match re-injection (that only happens on an actual navigation
+  // to a matching URL). Hooking pushState/replaceState/popstate lets the
+  // script notice the SPA route change itself and start once the path
+  // becomes the coupons page.
+  // ai: claude-sonnet-5 | 2026-08-14
+  function watchForCouponsRoute() {
+    const originalPushState = history.pushState;
+    history.pushState = function (...args) {
+      const result = originalPushState.apply(this, args);
+      start();
+      return result;
+    };
+
+    const originalReplaceState = history.replaceState;
+    history.replaceState = function (...args) {
+      const result = originalReplaceState.apply(this, args);
+      start();
+      return result;
+    };
+
+    window.addEventListener("popstate", start);
   }
 
   // On a real page load, "load" hasn't fired yet when this attaches, so the
@@ -128,4 +171,5 @@
   } else {
     window.addEventListener("load", start);
   }
+  watchForCouponsRoute();
 })();

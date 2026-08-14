@@ -35,10 +35,10 @@
 // ==UserScript==
 // @name         Publix Clip All Digital Coupons
 // @namespace    http://tampermonkey.net/
-// @version      2026-08-12
+// @version      2026-08-14
 // @description  Automatically clip all visible digital coupons on the Publix savings page
 // @author       Evan Ross (evan@eross.com)
-// @match        https://www.publix.com/savings/digital-coupons*
+// @match        https://www.publix.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=publix.com
 // @grant        none
 // ==/UserScript==
@@ -192,18 +192,62 @@
     alert(`Stopped after ${MAX_PASSES} passes. Clipped ${totalClicked} coupons.`)
   }
 
+  const DIGITAL_COUPONS_PATH_RE = /^\/savings\/digital-coupons/
+  let running = false
+
+  function isDigitalCouponsPage() {
+    return DIGITAL_COUPONS_PATH_RE.test(location.pathname)
+  }
+
   function start() {
-    waitForContent().then((found) => {
-      if (!found) {
-        console.warn('Publix clip-all: timed out waiting for coupon content.')
-        alert('Timed out waiting for coupon content to load. Try reloading the page.')
-        return
-      }
-      clickAllCouponButtons().catch((error) => {
+    if (running || !isDigitalCouponsPage()) {
+      return
+    }
+    running = true
+    waitForContent()
+      .then((found) => {
+        if (!found) {
+          console.warn('Publix clip-all: timed out waiting for coupon content.')
+          alert('Timed out waiting for coupon content to load. Try reloading the page.')
+          return
+        }
+        return clickAllCouponButtons()
+      })
+      .catch((error) => {
         console.error('Publix clip-all script failed:', error)
         alert(`Script failed: ${error.message}`)
       })
-    })
+      .finally(() => {
+        running = false
+      })
+  }
+
+  // @match now covers all of publix.com (not just /savings/digital-coupons)
+  // so this script is present from the moment you land on any Publix page.
+  // The site is a Vue SPA: navigating to Digital Coupons updates the URL via
+  // history.pushState instead of a real navigation, which never fires a
+  // fresh "load" event and never triggers Tampermonkey's own document-match
+  // re-injection (that only happens on an actual navigation to a matching
+  // URL). Hooking pushState/replaceState/popstate lets the script notice the
+  // SPA route change itself and start once the path becomes the digital
+  // coupons page.
+  // ai: claude-sonnet-5 | 2026-08-14
+  function watchForDigitalCouponsRoute() {
+    const originalPushState = history.pushState
+    history.pushState = function (...args) {
+      const result = originalPushState.apply(this, args)
+      start()
+      return result
+    }
+
+    const originalReplaceState = history.replaceState
+    history.replaceState = function (...args) {
+      const result = originalReplaceState.apply(this, args)
+      start()
+      return result
+    }
+
+    window.addEventListener('popstate', start)
   }
 
   // On a real page load, "load" hasn't fired yet when this attaches, so the
@@ -216,4 +260,5 @@
   } else {
     window.addEventListener('load', start)
   }
+  watchForDigitalCouponsRoute()
 })()
