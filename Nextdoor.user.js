@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-07-15.1
+// @version      2026-08-24.4
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -10,7 +10,7 @@
 // @grant        none
 // ==/UserScript==
 
-(function () {
+;(function () {
   'use strict'
 
   console.log('in custom script')
@@ -76,12 +76,22 @@
     return m ? m[1] : ''
   }
 
-  // ai: claude-sonnet-4-6 | 2026-06-19
-  // Posts in the news feed have a permalink like /p/4mY4LFfH6--d/ inside the card.
-  // The sharedPost_ prefix covers regular shared posts in the news feed; other feed
-  // item types (events, business posts) use different paths and won't match /p/.
+  // ai: claude-sonnet-5 | 2026-08-24
+  // Nextdoor no longer renders a /p/<shortcode> permalink anchor inside the
+  // feed card, so the shortcode has to come from the app's own Apollo cache
+  // instead of the DOM. Each card sits inside an ancestor with
+  // id="feedItem_<numericId>"; that numeric id is the same one used as the
+  // Apollo cache key "Post:post_<numericId>", whose detailLink.href still
+  // holds "/p/<shortcode>?view=detail". The sharedPost_ prefix covers regular
+  // shared posts in the news feed; other feed item types (events, business
+  // posts) don't have a matching Post cache entry and fall through to null.
   function getFeedItemId($post) {
-    const href = $post.find('a[href*="/p/"]').first().attr('href') || ''
+    const container = $post.closest('[id^="feedItem_"]')[0]
+    const client = window.__APOLLO_CLIENT__
+    if (!container || !client) return null
+    const numericId = container.id.slice('feedItem_'.length)
+    const entry = client.cache.extract()[`Post:post_${numericId}`]
+    const href = (entry && entry.detailLink && entry.detailLink.href) || ''
     const m = href.match(/\/p\/([A-Za-z0-9_-]+)/)
     return m ? `sharedPost_${m[1]}` : null
   }
@@ -131,7 +141,12 @@
           position: 'absolute',
           top: '8px',
           right: '48px',
-          zIndex: 9999,
+          // ai: claude-sonnet-5 | 2026-08-24
+          // Nextdoor's comment/detail modal overlays use z-index in the
+          // 1002-1051 range. This only needs to clear the post card's own
+          // (unpositioned) content, so keep it well under that instead of
+          // 9999, or the button bleeds through on top of open modals.
+          zIndex: 2,
           padding: '3px 10px',
           background: '#e0e0e0',
           border: '1px solid #999',
