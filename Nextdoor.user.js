@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-08-24.4
+// @version      2026-08-27
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -60,6 +60,18 @@
   function hidePostsTitled(title) {
     const $posts = $('span[data-testid="feed-item-visibility-tracker"] span')
     hideOrLog($posts.has(`h2:contains('${title}')`), `title:${title}`)
+  }
+
+  // ai: claude-sonnet-5 | 2026-08-27
+  // Nextdoor now renders "Sponsored" with a zero-width word-joiner spliced
+  // between every letter and Greek omicron (ο, U+03BF) substituted for Latin
+  // "o" -- e.g. "S⁠p⁠ο⁠n⁠s⁠ο⁠r⁠e⁠d".
+  // The literal string "Sponsored" never appears in the DOM, so a text
+  // :contains() match can't see it. Promoted feed items carry a reliable
+  // structural marker instead -- data-feed-item-type="PROMO" on the feed
+  // item's outer container (regular posts use "POST") -- so match on that.
+  function hidePromoted() {
+    hideOrLog($('[data-feed-item-type="PROMO"]'), 'promo')
   }
 
   // ai: claude-sonnet-4-6 | 2026-06-18
@@ -186,11 +198,8 @@
   const ADJECTIVES = 'two|wonderful|sweet|small|male|female|brown|black|white|orange|2|years? old'
 
   function hideStuff() {
-    // ai: claude-sonnet-4-6 | 2026-06-18
-    const $posts = $('span[data-testid="feed-item-visibility-tracker"] span')
-
     // hide promoted posts
-    hideOrLog($posts.has('div span:contains("Sponsored")'), 'sponsored')
+    hidePromoted()
 
     // Get rid of all the For Sale ads
     hideForSale()
