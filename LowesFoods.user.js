@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Lowes Foods Clip All Coupons
 // @namespace    https://shop.lowesfoods.com/
-// @version      2026-08-14
+// @version      2026-08-26
 // @description  Click all CLIP! buttons on the Lowes Foods promotions page, pressing Show More until every coupon is loaded
 // @author       Evan Ross (evan@eross.com)
-// @match        https://shop.lowesfoods.com/*
+// @match        https://shop.lowesfoods.com/promotions
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=lowesfoods.com
 // @grant        none
 // ==/UserScript==
