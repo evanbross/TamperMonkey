@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-08-27
+// @version      2026-08-28
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -56,10 +56,16 @@
     hideOrLog($matching, String(regex))
   }
 
-  // ai: claude-sonnet-4-6 | 2026-06-18
+  // ai: claude-sonnet-5 | 2026-08-28
+  // Nextdoor no longer renders these carousel/rollup widget titles ("Items
+  // for sale near you", "Upcoming Events", etc.) as <h2> -- there are zero
+  // <h2> elements anywhere on the page now. The title text lives in a plain
+  // span[data-testid="styled-text"] instead, several levels deep inside the
+  // same feed-item-visibility-tracker wrapper. Verified against the live
+  // "Upcoming Events" rollup, which the old h2 selector could not see at all.
   function hidePostsTitled(title) {
     const $posts = $('span[data-testid="feed-item-visibility-tracker"] span')
-    hideOrLog($posts.has(`h2:contains('${title}')`), `title:${title}`)
+    hideOrLog($posts.has(`span[data-testid="styled-text"]:contains('${title}')`), `title:${title}`)
   }
 
   // ai: claude-sonnet-5 | 2026-08-27
