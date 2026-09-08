@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-08-28
+// @version      2026-09-06
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
