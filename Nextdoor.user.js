@@ -263,7 +263,7 @@
     hidePostsContainingText(/\bleash and collar\b/i)
     hidePostsContainingText(/\blonghaired \w* cat\b/i)
     hidePostsContainingText(/\bnail trimming\b/i)
-    hidePostsContainingText(/\bpawboost.com\b/i)
+    hidePostsContainingText(/\bpawboost.com|petfinder.com\b/i)
     hidePostsContainingText(/\b(shelter dog|bully mix)\b/i)
     hidePostsContainingText(/\bthe pampered paw\b/i)
     hidePostsContainingText(/\bwho this dog belongs to\b/i)

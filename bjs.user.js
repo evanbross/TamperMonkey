@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name              BJ's Wholesale Club Coupon Clicker
 // @namespace         bjs-wholesale-coupon
-// @version           2026-08-12
+// @version           2026-09-04
 // @description       Click all the coupons on BJ's Wholesale Club website
 // @author            sleevetrick
 // @match             https://www.bjs.com/myCoupons
 // @match             https://www.bjs.com/myCoupons?source=header
 // @match             https://www.bjs.com/myCoupons?source=headeribbon
 // @match             https://www.bjs.com/myCoupons?source=megamenu&linkName=Coupons
-// @contributionURL   https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=lexlieberman@gmail.com&item_name=Greasy+Fork+for+BJs+CC
 // @grant             none
 // ==/UserScript==
 
