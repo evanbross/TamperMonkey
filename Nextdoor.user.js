@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-08-28
+// @version      2026-09-19
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -78,6 +78,37 @@
   // item's outer container (regular posts use "POST") -- so match on that.
   function hidePromoted() {
     hideOrLog($('[data-feed-item-type="PROMO"]'), 'promo')
+  }
+
+  // ai: claude-sonnet-5 | 2026-09-19
+  // Nextdoor also injects a native ad unit inline near a real post's
+  // comments (e.g. "Chewy · Sponsored" rendered where a top comment would
+  // be) -- separate from the standalone feed-item ads hidePromoted() above
+  // catches via data-feed-item-type="PROMO". This inline unit has no such
+  // ancestor marker: it's served by a third-party ad network (adzen.ai)
+  // and carries a hidden impression-tracking pixel
+  // (img[src*="adzen.ai/dea/ugc/impression"]) alongside the same
+  // obfuscated "Sponsored" label span used on the standalone ads. Match on
+  // the pixel -- a far more stable signal than Nextdoor's hashed CSS
+  // module class names (e.g. "goahnc0"), which have already changed once
+  // in this file's history -- and hide the nearest ancestor that also
+  // contains the "Sponsored" label, so only the ad block is hidden and
+  // not the real post/comments it's embedded next to. Verified against a
+  // live "Chewy" ad captured from the user's own session on 2026-09-19.
+  const SPONSORED_LABEL_RE = /S⁠?p⁠?[oο]⁠?n⁠?s⁠?[oο]⁠?r⁠?e⁠?d/i
+  function hideInlineSponsoredAds() {
+    const matched = []
+    $('img[src*="adzen.ai/dea/ugc/impression"]').each(function () {
+      let el = this.parentElement
+      for (let i = 0; i < 10 && el; i++, el = el.parentElement) {
+        const text = (el.innerText || el.textContent || '').replace(/\s+/g, ' ')
+        if (SPONSORED_LABEL_RE.test(text)) {
+          matched.push(el)
+          break
+        }
+      }
+    })
+    hideOrLog($(matched), 'inline-sponsored')
   }
 
   // ai: claude-sonnet-4-6 | 2026-06-18
@@ -206,6 +237,7 @@
   function hideStuff() {
     // hide promoted posts
     hidePromoted()
+    hideInlineSponsoredAds()
 
     // Get rid of all the For Sale ads
     hideForSale()
