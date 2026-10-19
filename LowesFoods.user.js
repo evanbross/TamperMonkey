@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lowes Foods Clip All Coupons
 // @namespace    https://shop.lowesfoods.com/
-// @version      2026-08-26
+// @version      2026-10-19
 // @description  Click all CLIP! buttons on the Lowes Foods promotions page, pressing Show More until every coupon is loaded
 // @author       Evan Ross (evan@eross.com)
 // @match        https://shop.lowesfoods.com/promotions
@@ -12,15 +12,8 @@
 /*!
  * Copyright (c) 2026 ZombieTech LLC. All rights reserved.
  *
- * LICENSE: Personal Use Only
- * This source code is made available for personal, non-commercial use only.
- * You may read, study, and run this code for personal purposes.
- * You may NOT:
- *   - Use this code, in whole or in part, in any commercial product or service
- *   - Sell, sublicense, or otherwise monetize this code or derivatives of it
- *   - Redistribute this code without explicit written permission from ZombieTech LLC
- *
- * No warranty is provided, express or implied. Use at your own risk.
+ * SPDX-License-Identifier: PolyForm-Strict-1.0.0
+ * See LICENSE in the project root for the full terms.
  *
  * Licensing inquiries: license@zombietech.biz
  */
