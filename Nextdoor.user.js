@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-09-19
+// @version      2026-10-23
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -125,24 +125,26 @@
     return m ? m[1] : ''
   }
 
-  // ai: claude-sonnet-5 | 2026-08-24
-  // Nextdoor no longer renders a /p/<shortcode> permalink anchor inside the
-  // feed card, so the shortcode has to come from the app's own Apollo cache
-  // instead of the DOM. Each card sits inside an ancestor with
-  // id="feedItem_<numericId>"; that numeric id is the same one used as the
-  // Apollo cache key "Post:post_<numericId>", whose detailLink.href still
-  // holds "/p/<shortcode>?view=detail". The sharedPost_ prefix covers regular
-  // shared posts in the news feed; other feed item types (events, business
-  // posts) don't have a matching Post cache entry and fall through to null.
+  // ai: claude-opus-5-5 | 2026-10-23
+  // Nextdoor renders no /p/<shortcode> permalink anchor in the feed card and
+  // no longer exposes window.__APOLLO_CLIENT__, so the id comes from the React
+  // props of the card's id="feedItem_<numericId>" container: a few fibers up,
+  // a component receives gqlFeedItem, whose post.shareId is already the
+  // "sharedPost_<shortcode>" id muteFeedItem expects. Feed item types with no
+  // post (events, business posts) fall through to null.
+  const MAX_FIBER_DEPTH = 15
+
   function getFeedItemId($post) {
     const container = $post.closest('[id^="feedItem_"]')[0]
-    const client = window.__APOLLO_CLIENT__
-    if (!container || !client) return null
-    const numericId = container.id.slice('feedItem_'.length)
-    const entry = client.cache.extract()[`Post:post_${numericId}`]
-    const href = (entry && entry.detailLink && entry.detailLink.href) || ''
-    const m = href.match(/\/p\/([A-Za-z0-9_-]+)/)
-    return m ? `sharedPost_${m[1]}` : null
+    if (!container) return null
+    const fiberKey = Object.keys(container).find(k => k.startsWith('__reactFiber'))
+    let fiber = fiberKey ? container[fiberKey] : null
+    for (let depth = 0; fiber && depth < MAX_FIBER_DEPTH; depth++) {
+      const shareId = fiber.memoizedProps?.gqlFeedItem?.post?.shareId
+      if (shareId) return shareId
+      fiber = fiber.return
+    }
+    return null
   }
 
   // ai: claude-sonnet-4-6 | 2026-06-19
@@ -172,8 +174,17 @@
     })
     if (!res.ok) {
       console.warn(`[nextdoor] muteFeedItem HTTP ${res.status} for ${feedItemId}`)
+      return false
     }
-    return res.ok
+    // ai: claude-opus-5-5 | 2026-10-23
+    // GraphQL reports failures (e.g. a rotated persisted-query hash) as HTTP
+    // 200 with an errors array, so res.ok alone would report success.
+    const json = await res.json()
+    if (json.errors || !json.data?.muteFeedItem) {
+      console.warn(`[nextdoor] muteFeedItem failed for ${feedItemId}:`, json.errors || json)
+      return false
+    }
+    return true
   }
 
   // ai: claude-sonnet-4-6 | 2026-06-18
