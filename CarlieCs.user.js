@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         Carlie C's Clip All Coupons
 // @namespace    https://www.carliecs.com/
-// @version      2026-08-14
+// @version      2026-10-23
 // @description  Click all visible Clip buttons on Carlie C's digital coupons pages and related AppCard frames
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.carliecs.com/*
 // @match        https://*.appcard.com/*
 // @match        https://appcard.com/*
 // @grant        none
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/CarlieCs.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/CarlieCs.user.js
 // ==/UserScript==
 
 (function () {

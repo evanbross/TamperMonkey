@@ -28,12 +28,14 @@
 // ==UserScript==
 // @name         Publix Clip All Digital Coupons
 // @namespace    http://tampermonkey.net/
-// @version      2026-10-19
+// @version      2026-10-23
 // @description  Automatically clip all visible digital coupons on the Publix savings page
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.publix.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=publix.com
 // @grant        none
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/publix-digital-coupons.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/publix-digital-coupons.user.js
 // ==/UserScript==
 
 ;(function () {

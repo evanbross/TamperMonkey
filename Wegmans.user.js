@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         Wegmans Clip All Coupons
 // @namespace    https://www.wegmans.com/shop/coupons
-// @version      2026-08-14
+// @version      2026-10-23
 // @description  Scroll to load all Wegmans coupons and click every Clip button
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.wegmans.com/*
 // @grant        none
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/Wegmans.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/Wegmans.user.js
 // ==/UserScript==
 
 (function () {

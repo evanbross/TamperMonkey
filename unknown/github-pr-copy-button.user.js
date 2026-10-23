@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub Universal Copy Button
 // @namespace    http://tampermonkey.net/
-// @version      3.0
+// @version      3.1
 // @description  A resilient script that adds a copy button to classic and modern GitHub views (PR, Issue, Project).
 // @author       Evan Ross (evan@eross.com)
 // @match        https://github.com/*/*/pull/*
@@ -9,6 +9,8 @@
 // @match        https://github.com/*/*/projects/*
 // @match        https://github.com/orgs/*/projects/*
 // @grant        none
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/unknown/github-pr-copy-button.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/unknown/github-pr-copy-button.user.js
 // ==/UserScript==
 
 // Copies the issue / PR description and issue number to the clipboard

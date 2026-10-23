@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name              BJ's Wholesale Club Coupon Clicker
 // @namespace         bjs-wholesale-coupon
-// @version           2026-09-04
+// @version           2026-10-23
 // @description       Click all the coupons on BJ's Wholesale Club website
 // @author            sleevetrick
 // @match             https://www.bjs.com/myCoupons
@@ -9,6 +9,8 @@
 // @match             https://www.bjs.com/myCoupons?source=headeribbon
 // @match             https://www.bjs.com/myCoupons?source=megamenu&linkName=Coupons
 // @grant             none
+// @updateURL         https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/bjs.user.js
+// @downloadURL       https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/bjs.user.js
 // ==/UserScript==
 
 // ai: claude-sonnet-5 | 2026-07-31

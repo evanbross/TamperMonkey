@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         Claude Chat Exporter
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Export Claude conversations to markdown. Click the Export button next to Share.
 // @author       Evan Ross (evan@eross.com)
 // @homepageURL  https://github.com/agarwalvishal/claude-chat-exporter
 // @match        https://claude.ai/chat/*
 // @grant        none
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/claude-chat-exporter.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/claude-chat-exporter.user.js
 // ==/UserScript==
 
 ;(function () {

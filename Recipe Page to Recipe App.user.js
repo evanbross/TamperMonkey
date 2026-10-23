@@ -2,7 +2,7 @@
 // @name         Recipe Page to Recipe App
 // @description  Install a button on any page that sends the current URL to the local Recipe App for capture.
 // @namespace    http://tampermonkey.net/
-// @version      2026-10-19
+// @version      2026-10-23
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.177milkstreet.com/recipes/*
 // @match        https://www.seriouseats.com/*
@@ -12,6 +12,8 @@
 // @grant        GM_xmlhttpRequest
 // @connect      recipe-app.localhost
 // @run-at       document-idle
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/Recipe%20Page%20to%20Recipe%20App.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/Recipe%20Page%20to%20Recipe%20App.user.js
 // ==/UserScript==
 
 /*!

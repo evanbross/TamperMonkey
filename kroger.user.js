@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kroger And Harris Teeter Clip All Coupons
 // @namespace    http://tampermonkey.net/
-// @version      2026-08-12
+// @version      2026-10-23
 // @description  Clean up Kroger pages and clip all visible coupon buttons on Kroger and Harris Teeter coupon pages
 // @author       Evan Ross (evan@eross.com)
 // @match        https://www.kroger.com/*
@@ -9,6 +9,8 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=kroger.com
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
 // @grant        none
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/kroger.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/kroger.user.js
 // ==/UserScript==
 
 /* globals $ */

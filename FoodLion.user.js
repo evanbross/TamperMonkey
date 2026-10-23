@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         Food Lion Clip All Coupons
 // @namespace    https://www.foodlion.com/
-// @version      2026-09-30.1
+// @version      2026-10-23
 // @description  Click all visible coupon buttons on Food Lion digital coupons pages
 // @author       Evan Ross (evan@eross.com)
 // @match        https://foodlion.com/savings/coupons/browse
 // @match        https://www.foodlion.com/savings/coupons/*
 // @grant        none
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/FoodLion.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/FoodLion.user.js
 // ==/UserScript==
 
 (function () {

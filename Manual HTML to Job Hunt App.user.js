@@ -2,7 +2,7 @@
 // @name         Manual HTML to Job Hunt App
 // @description  install a button on a matched page that will feed the html to my job scanner
 // @namespace    http://tampermonkey.net/
-// @version      2026-05-10
+// @version      2026-10-23
 // @author       Evan Ross (evan@eross.com)
 // @match        https://jobs.biospace.com/jobs/*
 // @match        https://wellfound.com/jobs/*
@@ -22,6 +22,8 @@
 // @connect      localhost
 // @connect      wellfound.com
 // @run-at       document-idle
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/Manual%20HTML%20to%20Job%20Hunt%20App.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/Manual%20HTML%20to%20Job%20Hunt%20App.user.js
 // ==/UserScript==
 
 (function () {
