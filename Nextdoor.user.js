@@ -6,8 +6,11 @@
 // @author       You
 // @match        https://nextdoor.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nextdoor.com
+// @updateURL    https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/Nextdoor.user.js
+// @downloadURL  https://gitlab.com/EvanRoss/tampermonkey/-/raw/main/Nextdoor.user.js
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
 // @grant        none
+// @update
 // ==/UserScript==
 
 ;(function () {
