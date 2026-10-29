@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-10-23
+// @version      2026-10-29
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -71,16 +71,55 @@
     hideOrLog($posts.has(`span[data-testid="styled-text"]:contains('${title}')`), `title:${title}`)
   }
 
+  // ai: claude-opus-5-5 | 2026-10-29
+  // Ads are made invisible rather than removed: the page still downloads,
+  // lays out and measures every ad exactly as if it were on screen -- images
+  // (including lazy ones) load, impression pixels fire, and visibility/dwell
+  // trackers (IntersectionObserver ignores visibility) see a normally sized
+  // ad in the viewport. visibility:hidden stops it painting and takes it out
+  // of clicks and tab focus; position:absolute takes it out of the flow so it
+  // leaves no blank gap. No request is blocked and no ad node is removed.
+  // display:none (what $.hide() does) was the giveaway: a zero-size box that
+  // never intersects the viewport and can keep lazy images from loading.
+  const CONCEAL_DECLARATIONS = 'visibility: hidden !important; position: absolute !important;'
+
+  // ai: claude-opus-5-5 | 2026-10-29
+  // One stylesheet for ads with a structural marker, so their own elements
+  // are never written to at all.
+  function addAdStylesheet() {
+    if (DEBUG || document.getElementById('nd-ad-conceal')) return
+    const style = document.createElement('style')
+    style.id = 'nd-ad-conceal'
+    style.textContent = `[data-feed-item-type="PROMO"] { ${CONCEAL_DECLARATIONS} }`
+    ;(document.head || document.documentElement).appendChild(style)
+  }
+
+  // ai: claude-opus-5-5 | 2026-10-29
+  // For ads found by their label, which CSS can't select: set the same
+  // declarations inline, once per element.
+  const concealed = new WeakSet()
+  function concealOrLog(elements, label) {
+    const fresh = elements.filter(el => !concealed.has(el))
+    if (!fresh.length) return
+    if (DEBUG) {
+      fresh.forEach(el => console.log(`[nextdoor] ${label} →`, (el.innerText || '').slice(0, 120).replace(/\s+/g, ' ')))
+      return
+    }
+    fresh.forEach(el => {
+      el.style.setProperty('visibility', 'hidden', 'important')
+      el.style.setProperty('position', 'absolute', 'important')
+      concealed.add(el)
+    })
+  }
+
   // ai: claude-sonnet-5 | 2026-08-27
-  // Nextdoor now renders "Sponsored" with a zero-width word-joiner spliced
-  // between every letter and Greek omicron (ο, U+03BF) substituted for Latin
-  // "o" -- e.g. "S⁠p⁠ο⁠n⁠s⁠ο⁠r⁠e⁠d".
-  // The literal string "Sponsored" never appears in the DOM, so a text
-  // :contains() match can't see it. Promoted feed items carry a reliable
-  // structural marker instead -- data-feed-item-type="PROMO" on the feed
-  // item's outer container (regular posts use "POST") -- so match on that.
+  // Promoted feed items carry a reliable structural marker -- data-feed-item-
+  // type="PROMO" on the feed item's outer container (regular posts use
+  // "POST") -- so match on that rather than on the "Sponsored" label.
+  // ai: claude-opus-5-5 | 2026-10-29 -- now concealed by addAdStylesheet's rule
+  // (see CONCEAL_DECLARATIONS); this only logs them in DEBUG mode.
   function hidePromoted() {
-    hideOrLog($('[data-feed-item-type="PROMO"]'), 'promo')
+    if (DEBUG) hideOrLog($('[data-feed-item-type="PROMO"]'), 'promo')
   }
 
   // ai: claude-sonnet-5 | 2026-09-19
@@ -111,7 +150,60 @@
         }
       }
     })
-    hideOrLog($(matched), 'inline-sponsored')
+    concealOrLog(matched, 'inline-sponsored') // ai: claude-opus-5-5 | 2026-10-29
+  }
+
+  // ai: claude-opus-5-5 | 2026-10-29
+  // Nextdoor now also places a native ad as the first item of a post's
+  // comment thread ("Cellular Sales · Sponsored" with a "Learn more" link,
+  // seen 2026-10-29 in the post detail view) -- not always the adzen.ai unit
+  // above, and with no PROMO marker. Its markup hasn't been captured, so this
+  // keys only on what every Nextdoor ad shows: a text element that is just
+  // the "Sponsored" label (a comment that merely mentions the word holds more
+  // text than that). The label is now plain "Sponsored" again on the live
+  // feed ads, so the obfuscated spelling is optional in the pattern.
+  //
+  // From the label it climbs to the ad's own block: the last ancestor before
+  // one that also holds real content (another comment, the post body, its
+  // reaction or reply controls). So in a comment thread it stops at the ad's
+  // list item, and it can never take a real comment or post with it.
+  const SPONSORED_LEAF_RE = new RegExp(`^[·•\\s]*${SPONSORED_LABEL_RE.source}\\s*$`, 'i')
+  const REAL_CONTENT_SELECTOR = [
+    '[data-testid="comment-detail"]',
+    '[data-testid="post-body"]',
+    '[data-testid="feed-item-card"]',
+    '[data-testid="reaction-button"]',
+    '[data-testid="post-reply-button"]',
+    '[data-testid="comment-add-reply-input"]',
+  ].join(', ')
+  const MAX_AD_CLIMB = 15
+
+  // Real content in `container` that isn't part of the label's own branch.
+  function holdsOtherContent(container, branch) {
+    return [...container.querySelectorAll(REAL_CONTENT_SELECTOR)]
+      .some(el => el !== branch && !branch.contains(el) && !el.contains(branch))
+  }
+
+  function adBlockFor(label) {
+    let block = label
+    for (let i = 0; i < MAX_AD_CLIMB; i++) {
+      const parent = block.parentElement
+      if (!parent || parent === document.body) return null
+      if (holdsOtherContent(parent, block)) return block
+      block = parent
+    }
+    return null // never found the boundary -- too risky to hide anything
+  }
+
+  function hideThreadSponsoredAds() {
+    const blocks = new Set()
+    for (const el of document.querySelectorAll('span, div, p')) {
+      if (el.children.length || el.closest('[data-feed-item-type="PROMO"]')) continue
+      if (!SPONSORED_LEAF_RE.test(el.textContent || '')) continue
+      const block = adBlockFor(el)
+      if (block) blocks.add(block)
+    }
+    concealOrLog([...blocks], 'thread-sponsored')
   }
 
   // ai: claude-sonnet-4-6 | 2026-06-18
@@ -250,8 +342,10 @@
 
   function hideStuff() {
     // hide promoted posts
+    addAdStylesheet()
     hidePromoted()
     hideInlineSponsoredAds()
+    hideThreadSponsoredAds()
 
     // Get rid of all the For Sale ads
     hideForSale()
