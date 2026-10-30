@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-10-29
+// @version      2026-10-29.1
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -318,17 +318,31 @@
         // feedItemId is resolved at click time, not attach time, because Nextdoor
         // renders card links asynchronously — the /p/ href may not exist yet when
         // the 500ms timer first sees the card.
-        .on('click', function (e) {
+        // ai: claude-opus-5-5 | 2026-10-29
+        // Posts are only hidden once the server confirms the mute. Hiding first
+        // made a failed mute indistinguishable from a working one until the
+        // next refresh brought the post back.
+        .on('click', async function (e) {
           e.stopPropagation()
           const $btn = $(this)
           $btn.text('Hiding…').prop('disabled', true)
           const feedItemId = getFeedItemId($post)
-          if (feedItemId) {
-            mutePostOnServer(feedItemId).catch(err => console.warn('[nextdoor] muteFeedItem error:', err))
-          } else {
+          if (!feedItemId) {
+            // Rollups, promos, events: no post id to mute, so this is the best we can do.
             console.warn('[nextdoor] could not extract feedItemId; hiding locally only')
+            $post.hide()
+            return
           }
-          $post.hide()
+          const muted = await mutePostOnServer(feedItemId).catch(err => {
+            console.warn('[nextdoor] muteFeedItem error:', err)
+            return false
+          })
+          if (muted) {
+            console.info(`[nextdoor] muted ${feedItemId}`)
+            $post.hide()
+          } else {
+            $btn.text('✕ Hide failed — retry').prop('disabled', false)
+          }
         })
         .appendTo($post)
     })
