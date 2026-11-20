@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Nextdoor
 // @namespace    http://tampermonkey.net/
-// @version      2026-10-29.1
+// @version      2026-11-20
 // @description  try to take over the world!
 // @author       You
 // @match        https://nextdoor.com/*
@@ -354,13 +354,33 @@
   const COMMON_BREEDS = 'lab setter|beagle|husky|black lab|german shepherd|bulldog|poodle|pitbulls?|chihuahua|affenpinscher|lab retriever|tabby'
   const ADJECTIVES = 'two|wonderful|sweet|small|male|female|brown|black|white|orange|2|years? old'
 
-  function hideStuff() {
-    // hide promoted posts
+  // ai: claude-opus-5-5 | 2026-11-20
+  // Pages where only ads are hidden: no content filters, no Hide buttons.
+  // Moderation needs to see every post as-is, including the ones the
+  // filters below would hide.
+  const ADS_ONLY_PATH_PREFIXES = ['/moderation_feed']
+
+  function isAdsOnlyPage() {
+    return ADS_ONLY_PATH_PREFIXES.some(prefix => location.pathname.startsWith(prefix))
+  }
+
+  function hideAds() {
     addAdStylesheet()
     hidePromoted()
     hideInlineSponsoredAds()
     hideThreadSponsoredAds()
+  }
 
+  // ai: claude-opus-5-5 | 2026-11-20
+  // Checked on every tick, not once at load: Nextdoor is a single-page app,
+  // so moving between the main feed and the moderation feed changes the URL
+  // without re-running this script.
+  function tick() {
+    hideAds()
+    if (!isAdsOnlyPage()) hideUnwanted()
+  }
+
+  function hideUnwanted() {
     // Get rid of all the For Sale ads
     hideForSale()
 
@@ -420,5 +440,5 @@
     addHideButtons()
   }
 
-  setInterval(hideStuff, 500)
+  setInterval(tick, 500)
 })()
